@@ -178,10 +178,10 @@ inputs = tokenizer(ARTICLE_TO_SUMMARIZE, max_length=1024, return_tensors="pt", t
 summary_ids = model.generate(inputs["input_ids"], num_beams=2, max_length=50)
 post_sum = tokenizer.batch_decode(summary_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
 
-print(post_sum)
+# print(post_sum)
 
 simplified_summary = printsim(simplify(post_sum))
 
-print(simplified_summary)
+# print(simplified_summary)
 
 # to RUN: python Generate_summary_NLP.py
