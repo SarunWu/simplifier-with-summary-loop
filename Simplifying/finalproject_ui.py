@@ -5,31 +5,46 @@ import numpy as np
 
 st.header("NLP Final Project")
 
-# Number of candidates
-candidates = ['1', '2', '3']
-number_candidates = st.selectbox("Select number of candidate summarization to display.", candidates)
+col1, col2 = st.columns(2)
+
+with col1:
+    number_candidates = st.number_input('Beam search number', value=2, max_value=5, min_value=1, format="%d")
+    number_candidates = int(number_candidates)
+
+with col2:
+    max_length = st.number_input('Max length', value=50, min_value=10, format="%d")
+    max_length = int(max_length)
+
+
+
 
 # Input text for summarization
-input_text = st.text_input("Introduce your text to summarize!", value="", key="alex")
-
-# Generate Summary
-inputs = simplifier.tokenizer(input_text, max_length=1024, return_tensors="pt", truncation=True).to(simplifier.device)
-summary_ids = simplifier.model.generate(inputs["input_ids"], num_beams=2, max_length=50)
-post_sum = simplifier.tokenizer.batch_decode(summary_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
-
-
+# input_text = st.text_input("Introduce your text to summarize!", value="", key="alex")
 # Summarized Text
-summarized_text = st.text_area('Summarized Text', post_sum, height=100)
+input_text = st.text_area('Introduce your text to summarize!', value="", height=100)
 
 # Button to apply simplification
-clear_button = st.button("Simplify the summary")
+summarize_button = st.button("Generate the summary")
 
+# Generate Summary
+post_sum = ""
+if input_text != "":
+    inputs = simplifier.tokenizer(input_text, max_length=1024, return_tensors="pt", truncation=True).to(
+        simplifier.device)
+    summary_ids = simplifier.model.generate(inputs["input_ids"], num_beams=number_candidates, max_length=max_length)
+    post_sum = simplifier.tokenizer.batch_decode(summary_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True)[
+        0]
+
+    difficult_words = simplifier.diffword(post_sum)
+
+st.text_area('Summary Text', post_sum, height=150)
+
+# Button to apply simplification
+simplify_button = st.button("Simplify the summary")
 
 # Simplified Text
 simplified_summary = ""
-if clear_button:
+if simplify_button:
     # Generate SIMPLIFIED Summary
     simplified_summary = simplifier.printsim(simplifier.simplify(post_sum))
 st.text_area('Simplified Text', simplified_summary, height=100)
-
-
