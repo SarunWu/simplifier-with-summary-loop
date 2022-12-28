@@ -18,7 +18,7 @@ if 'model_loaded' not in st.session_state:
 
 st.header("NLP Final Project")
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
     number_candidates = st.number_input('Beam search number', value=2, max_value=5, min_value=1, format="%d")
@@ -28,7 +28,10 @@ with col2:
     max_length = st.number_input('Max length', value=50, min_value=10, format="%d")
     max_length = int(max_length)
 
-# Input text for summarization
+with col3:
+    used_pronoun = st.checkbox("Replace pronoun")
+
+# 1 - Input text for summarization
 # Summarized Text
 input_text = st.text_area('Introduce your text to summarize!', value="", height=100)
 st.text("Text length: " + str(len(input_text)))
@@ -36,23 +39,27 @@ st.text("Text length: " + str(len(input_text)))
 # Button to apply simplification
 summarize_button = st.button("Generate the summary")
 
-# Generate co-reference
-coref_summary = ""
+# 2 - Generate co-references
+extracted_summary = ""
 if input_text != "":
-    coref_summary = coref.generate_summary(input_text)
+    original_summary, coref_summary = coref.generate_summary(input_text)
+    extracted_summary = original_summary
+    if used_pronoun:
+        extracted_summary = coref_summary
 
-st.text_area('Co-referenced Text', coref_summary, height=150)
-st.text("Text length: " + str(len(coref_summary)))
+st.text_area('Co-referenced Text', extracted_summary, height=150)
+st.text("Text length: " + str(len(extracted_summary)))
 
-# Generate Summary
+# 3 - Generate Summary
 post_sum = ""
 if input_text != "":
-    inputs = st.session_state.tokenizer(input_text, max_length=1024, return_tensors="pt", truncation=True).to(
+    inputs = st.session_state.tokenizer(extracted_summary, max_length=1024, return_tensors="pt", truncation=True).to(
         st.session_state.device)
     summary_ids = st.session_state.model.generate(inputs["input_ids"], num_beams=number_candidates,
                                                   max_length=max_length)
     post_sum = \
-    st.session_state.tokenizer.batch_decode(summary_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True)[0]
+        st.session_state.tokenizer.batch_decode(summary_ids, skip_special_tokens=True,
+                                                clean_up_tokenization_spaces=True)[0]
 
     difficult_words = simplifier.diffword(post_sum)
 
@@ -62,7 +69,7 @@ st.text("Text length: " + str(len(post_sum)))
 # Button to apply simplification
 simplify_button = st.button("Simplify the summary")
 
-# Simplified Text
+# 4 - Simplified Text
 simplified_summary = ""
 if simplify_button:
     # Generate SIMPLIFIED Summary
