@@ -29,50 +29,58 @@ with col2:
     max_length = int(max_length)
 
 with col3:
-    used_pronoun = st.checkbox("Replace pronoun")
+    ""
 
 # 1 - Input text for summarization
 # Summarized Text
-input_text = st.text_area('Introduce your text to summarize!', value="", height=100)
-st.text("Text length: " + str(len(input_text)))
-
-# Button to apply simplification
-summarize_button = st.button("Generate the summary")
+with st.container():
+    input_text = st.text_area('Introduce your text to summarize!', value="", height=100)
+    st.text("Text length: " + str(len(input_text)))
 
 # 2 - Generate co-references
-extracted_summary = ""
-if input_text != "":
-    original_summary, coref_summary = coref.generate_summary(input_text)
-    extracted_summary = original_summary
-    if used_pronoun:
-        extracted_summary = coref_summary
+extractive_summarize_button = st.button("Generate extractive summary")
+used_pronoun = st.checkbox("Replace pronoun")
 
-st.text_area('Co-referenced Text', extracted_summary, height=150)
-st.text("Text length: " + str(len(extracted_summary)))
+with st.container():
+    extracted_summary = ""
+    if input_text != "":
+        original_summary, coref_summary = coref.generate_summary(input_text)
+        extracted_summary = original_summary
+        if used_pronoun:
+            extracted_summary = coref_summary
+    st.text_area('Co-referenced Text', extracted_summary, height=150)
+    st.text("Text length: " + str(len(extracted_summary)))
 
 # 3 - Generate Summary
-post_sum = ""
-if input_text != "":
-    inputs = st.session_state.tokenizer(extracted_summary, max_length=1024, return_tensors="pt", truncation=True).to(
-        st.session_state.device)
-    summary_ids = st.session_state.model.generate(inputs["input_ids"], num_beams=number_candidates,
-                                                  max_length=max_length)
-    post_sum = \
-        st.session_state.tokenizer.batch_decode(summary_ids, skip_special_tokens=True,
-                                                clean_up_tokenization_spaces=True)[0]
+summarize_button = st.button("Generate abstractive summary")
 
-    difficult_words = simplifier.diffword(post_sum)
+with st.container():
+    used_coref = st.checkbox("Use co-reference summary")
+    if ~used_coref:
+        extracted_summary = input_text
 
-st.text_area('Summary Text', post_sum, height=150)
-st.text("Text length: " + str(len(post_sum)))
+    post_sum = ""
+    if input_text != "":
+        inputs = st.session_state.tokenizer(extracted_summary, max_length=1024, return_tensors="pt",
+                                            truncation=True).to(
+            st.session_state.device)
+        summary_ids = st.session_state.model.generate(inputs["input_ids"], num_beams=number_candidates,
+                                                      max_length=max_length)
+        post_sum = \
+            st.session_state.tokenizer.batch_decode(summary_ids, skip_special_tokens=True,
+                                                    clean_up_tokenization_spaces=True)[0]
 
-# Button to apply simplification
-simplify_button = st.button("Simplify the summary")
+        difficult_words = simplifier.diffword(post_sum)
+
+    st.text_area('Summary Text', post_sum, height=150)
+    st.text("Text length: " + str(len(post_sum)))
 
 # 4 - Simplified Text
-simplified_summary = ""
-if simplify_button:
-    # Generate SIMPLIFIED Summary
+
+simplify_button = st.button("Simplify the summary")
+
+with st.container():
     simplified_summary = simplifier.printsim(simplifier.simplify(post_sum))
-st.text_area('Simplified Text', simplified_summary, height=100)
-st.text("Text length: " + str(len(simplified_summary)))
+
+    st.text_area('Simplified Text', simplified_summary, height=100)
+    st.text("Text length: " + str(len(simplified_summary)))
