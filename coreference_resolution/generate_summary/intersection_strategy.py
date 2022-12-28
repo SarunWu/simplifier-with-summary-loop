@@ -47,7 +47,6 @@ class IntersectionStrategy(ABC):
         self.document = []
         self.doc = None
 
-    # @abstractmethod
     def get_intersected_clusters(self):
         intersected_clusters = []
         for allen_cluster in self.allen_clusters:
