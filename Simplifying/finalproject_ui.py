@@ -13,7 +13,7 @@ if 'model_loaded' not in st.session_state:
     st.session_state.model = PegasusForConditionalGeneration.from_pretrained(model_name).to(st.session_state.device)
     st.session_state.tokenizer = PegasusTokenizer.from_pretrained(model_name)
 
-    st.session_state.rougescore = 0
+    st.session_state.rougescore = {'rouge1':0 ,'rouge2':0 ,'rougeL' : 0 }
 
 
 st.header("NLP Final Project")
@@ -61,7 +61,8 @@ st.text_area('Simplified Text', simplified_summary, height=100)
 print("Input text is:", input_text)
 print("post_sum is:", post_sum)
 
-st.session_state.rougescore = eval_rouge.cal_rouge([input_text],[post_sum])
+if post_sum!= "":
+    st.session_state.rougescore = eval_rouge.cal_rouge([input_text],[post_sum])
 
 # print("Rouge score is:", st.session_state.rougescore, type(st.session_state.rougescore))
 st.text("Rouge 1 score is: " + str(st.session_state.rougescore['rouge1']))
