@@ -10,11 +10,40 @@ from bert_score import BERTScorer
 from nltk.tokenize import sent_tokenize, RegexpTokenizer
 
 
+bert_scorer = BERTScorer(lang='en', model_type='bert-base-uncased', num_layers=8, nthreads=8, batch_size=256, rescale_with_baseline=True)
+
 #S-BERT
 from sentence_transformers import SentenceTransformer, util
 sbertmodel = SentenceTransformer('all-MiniLM-L6-v2')
 
-# SBERT Cosine Similarity
+# BERTscore
+def cal_BERTscore(ref_text, pred_text):
+    ts = time.time()
+
+    total_score = dict()
+    total_score['bert'] = []
+
+    # hyps = sampled, refs = referenced
+    for hyps, refs in tqdm(zip(pred_text, ref_text)):
+        # input to function must be list
+        P, R, F1 = bert_scorer.score([hyps], [refs])
+        score = F1.item()
+        total_score['bert'].append(score)
+
+    total_score['bert'] = np.array(total_score['bert'])
+
+    score = total_score['bert'].mean()
+
+    print("BERTScore")
+    print("the higher, the better \n")
+    print("BERTScore between text = {:.3f}".format(score))
+    print()
+    print("time spent in calculation:{}".format(timedelta(seconds=time.time() - ts)))
+
+    return total_score
+
+
+# BERTscore
 def cal_SBERT_cosine_score(ref_text, pred_text):
     ts = time.time()
 
@@ -207,6 +236,133 @@ class cal_wordfreq:
         return total_score
 
 
+# Flesch–Kincaid grade level, the lower, the easier (output is a grade level)
+def cal_fkgl(text_list, title="", printtop=True):
+    ts = time.time()
+    total_score = dict()
+    total_score['reference'] = []
+
+    for text in text_list:
+        score = textstat.flesch_kincaid_grade(text)
+        total_score['reference'].append(score)
+
+    total_score['reference'] = np.array(total_score['reference'])
+
+    score = total_score['reference'].mean()
+
+    if printtop:
+        print("Flesch–Kincaid Grade Level -- the lower, the easier (output is a grade level) \n")
+    if title == "":
+        print("score of {} = {:.3f}".format(argname("text_list"), score))
+    else:
+        print("score of {} = {:.3f}".format(title, score))
+    return (score, total_score)
+
+
+def cal_fkgl_old(ref_sum, ori_sum, sim_sum, show_all=False):
+    ts = time.time()
+
+    total_score = dict()
+    total_score['reference'] = []
+    total_score['original'] = []
+    total_score['simplify'] = []
+
+    for text in ref_sum:
+        score = textstat.flesch_kincaid_grade(text)
+        total_score['reference'].append(score)
+
+    for text in ori_sum:
+        score = textstat.flesch_kincaid_grade(text)
+        total_score['original'].append(score)
+
+    for text in sim_sum:
+        score = textstat.flesch_kincaid_grade(text)
+        total_score['simplify'].append(score)
+
+    total_score['reference'] = np.array(total_score['reference'])
+    total_score['original'] = np.array(total_score['original'])
+    total_score['simplify'] = np.array(total_score['simplify'])
+
+    ref_score = total_score['reference'].mean()
+    ori_score = total_score['original'].mean()
+    sim_score = total_score['simplify'].mean()
+
+    print("Flesch–Kincaid Grade Level")
+    print("the lower, the easier (output is a grade level) \n")
+    print("Reference summary = {:.3f}".format(ref_score))
+    print("Original summary = {:.3f}".format(ori_score))
+    print("Simplified summary = {:.3f}".format(sim_score))
+    return total_score
+
+
+class cal_wordfreq2:
+    def __init__(self):
+        self.stopws = set(nltk.corpus.stopwords.words("english") + ["might", "would", "``", "-", "--"])
+
+    def word_score_func(self, w):
+        return zipf_frequency(w, 'en', wordlist="large")
+
+    def is_good_word(self, w):
+        if w.lower() in self.stopws:
+            return False
+        return True
+
+    def cal_score(self, text):
+        words1 = nltk.tokenize.word_tokenize(text)
+        # words1 = set([w.lower() for w in words1])
+        # words1 = set([w.lower() for w in words1 if self.is_good_word(w)])
+        words1 = [w.lower() for w in words1 if self.is_good_word(w)]
+
+        words1_zipfs = [{"w": w, "zipf": self.word_score_func(w)} for w in words1]
+        words1_zipfs = sorted(words1_zipfs, key=lambda x: x['zipf'])
+
+        if len(words1_zipfs) == 0:
+            words1_avg_zipfs = 0.0
+        else:
+            words1_avg_zipfs = np.mean([x['zipf'] for x in words1_zipfs])
+
+        return words1_avg_zipfs
+
+    def score(self, ref_sum, ori_sum, sim_sum, show_all=False):
+        ts = time.time()
+        total_score = dict()
+        total_score['reference'] = []
+        total_score['original'] = []
+        total_score['simplify'] = []
+
+        for text in ref_sum:
+            score = self.cal_score(text)
+            total_score['reference'].append(score)
+
+        for text in ori_sum:
+            score = self.cal_score(text)
+            total_score['original'].append(score)
+
+        for text in sim_sum:
+            score = self.cal_score(text)
+            total_score['simplify'].append(score)
+
+        total_score['reference'] = np.array(total_score['reference'])
+        total_score['original'] = np.array(total_score['original'])
+        total_score['simplify'] = np.array(total_score['simplify'])
+
+        ref_score = total_score['reference'].mean()
+        ori_score = total_score['original'].mean()
+        sim_score = total_score['simplify'].mean()
+
+        print("Word Frequency")
+        print("the higher, the easier \n")
+        if show_all:
+            print("Reference summary = {:.3f}".format(ref_score))
+        print("Original summary = {:.3f}".format(ori_score))
+        print("Simplified summary = {:.3f}".format(sim_score))
+        print("Diff between simplified - original = {:.3f}".format(sim_score - ori_score))
+        #print()
+        #print("time spent in calculation:{}".format(timedelta(seconds=time.time() - ts)))
+
+        return total_score
+
+
 def cal_word_count(text_list, title="", printtop=True):
     ts = time.time()
     total_score = []
@@ -231,18 +387,18 @@ def cal_word_count(text_list, title="", printtop=True):
 # Eval input from Coreference 
 def embed_sent(text):
     remove_list = [".", ",", "'", "\"", '``', "'", ',', '-', '`', "''"]
-    
+
     sent_list = []
     total_sent_emb = []
     sent_list = sent_tokenize(text)
-    
+
     for puct in remove_list:
         if puct in sent_list:
             sent_list.remove(puct)
-    
+
     total_sent_emb = [sbertmodel.encode(sent) for sent in sent_list]
     return total_sent_emb
-    
+
 # embed each sentence by sentence
 def cosine_by_sentence_all_separate(text_list1, text_list2):
     final_score = []
@@ -262,7 +418,7 @@ def cosine_by_sentence_all_separate(text_list1, text_list2):
         score_list = np.array(score_list)
         total_score = score_list.mean()
         final_score.append(total_score)
-        
+
     final_score = np.array(final_score)
     avg_score = final_score.mean()
     return avg_score, final_score
@@ -274,7 +430,7 @@ def cosine_by_sentence_ref_oneshot(content, reference):
 
         text_emb1 = embed_sent(text1)
         text_emb2 = sbertmodel.encode(text2)
-        
+
         score_list = []
 
         for i in range(len(text_emb1)):
@@ -286,7 +442,7 @@ def cosine_by_sentence_ref_oneshot(content, reference):
         score_list = np.array(score_list)
         total_score = score_list.mean()
         final_score.append(total_score)
-        
+
     final_score = np.array(final_score)
     avg_score = final_score.mean()
     return avg_score, final_score
