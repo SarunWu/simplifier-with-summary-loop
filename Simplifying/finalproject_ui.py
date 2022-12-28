@@ -1,7 +1,17 @@
 import streamlit as st
 import Generate_summary_NLP as simplifier
-import pandas as pd
-import numpy as np
+from transformers import PegasusForConditionalGeneration, PegasusTokenizer
+import torch
+
+
+if 'model_loaded' not in st.session_state:
+    st.session_state.model_loaded = ["loaded"]
+    model_name = "google/pegasus-cnn_dailymail"
+    st.session_state.device = "cuda" if torch.cuda.is_available() else "cpu"
+    print("Downloading model")
+    st.session_state.model = PegasusForConditionalGeneration.from_pretrained(model_name).to(st.session_state.device)
+    st.session_state.tokenizer = PegasusTokenizer.from_pretrained(model_name)
+    
 
 st.header("NLP Final Project")
 
@@ -29,11 +39,9 @@ summarize_button = st.button("Generate the summary")
 # Generate Summary
 post_sum = ""
 if input_text != "":
-    inputs = simplifier.tokenizer(input_text, max_length=1024, return_tensors="pt", truncation=True).to(
-        simplifier.device)
-    summary_ids = simplifier.model.generate(inputs["input_ids"], num_beams=number_candidates, max_length=max_length)
-    post_sum = simplifier.tokenizer.batch_decode(summary_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True)[
-        0]
+    inputs = st.session_state.tokenizer(input_text, max_length=1024, return_tensors="pt", truncation=True).to(st.session_state.device)
+    summary_ids = st.session_state.model.generate(inputs["input_ids"], num_beams=number_candidates, max_length=max_length)
+    post_sum = st.session_state.tokenizer.batch_decode(summary_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True)[0]
 
     difficult_words = simplifier.diffword(post_sum)
 
