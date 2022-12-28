@@ -66,7 +66,6 @@ import os
 
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
-
 ts = time.time()
 
 import spacy  # 2.3.8 with numpy==1.21
@@ -149,16 +148,15 @@ def make_sentence(sent_list, sorted_score_dict):
     return result
 
 
-def make_sentence_coref(sent_list, sorted_score_dict, final_sent_list):
+def make_sentence_coref(sent_list, sorted_score_dict, first3_sent):
     """
     sent_list : list of tokenized sentence of each article
     sorted_score_dict that we want to make sentence
     """
     # len_sent_list = len(sent_list)
     # print(len_sent_list)
+    final_sent_list = first3_sent
     for i in sorted_score_dict:
-        # print(i)
-        # if i <= len_sent_list-1:
         final_sent_list.append(sent_list[i])
 
     # join into string
@@ -205,25 +203,43 @@ def lemma_keyword(kw_list):
 
 
 def generate_summary(text):
+    # tokenize content into sentences
     sent_list = sent_tokenize(text)
     len_sent_list = len(sent_list)
     first3_sent = sent_list[:3]
     last_sent = sent_list[-1:]
+
+    # the rest of sentences
     select_sent = sent_list[3:len_sent_list - 1]
+
+    # join selected sent into string first
     select_text = ' '.join(select_sent)
+
+    # co-reference selected sentences
     select_text_coref = coref.resolve_coreferences(select_text)
+
+    # tokenized co-ref content into sent
     select_sent_coref = sent_tokenize(select_text_coref)
+    select_sent_coref_list = select_sent_coref
+
+    # lower case sentence
     select_sent_coref = [sentence.lower() for sentence in select_sent_coref]
+
+    # lemma
     select_sent_coref_lemma = lemma_sent(select_sent_coref=select_sent_coref)
+
+    # remove stop word in sent after lemma
     select_sent_coref_lemma = [remove_stop_word(sent) for sent in select_sent_coref_lemma]
+
+    # find key word and lemma them
     tf = find_tfidf([text])
     kw_lemma_list = lemma_keyword(tf)
 
-    # cruniqueeate initial matrix for similarity score
+    # initial matrix for kw co-occurrence score
     len_sent = len(select_sent_coref_lemma)
     sim_mat = np.zeros([len_sent, len_sent])
 
-    # cal similarity score for each pair
+    # cal score for each pair base on kw co-occurrence
     for i in range(len_sent):
         for j in range(len_sent):
             if i != j:
@@ -232,24 +248,40 @@ def generate_summary(text):
                 for kw in kw_lemma_list:
                     if (kw in text1) and (kw in text2):
                         sim_mat[i][j] += 1
+    print("*" * 50)
+    print("sim_mat: ", sim_mat)
 
     # create graph
     nx_graph = nx.from_numpy_array(sim_mat)
+    print("*" * 50)
+    print("nx_graph: ", nx_graph)
 
     # pagerank score
     textrank_score = nx.pagerank(nx_graph)
+    print("*" * 50)
+    print("textrank_score: ", textrank_score)
 
-    sort_sent = filter_and_sort_score(score_dict=textrank_score, num_sent=round(len_sent/2) - 3)
+    # sort sentences
+    sort_sent = filter_and_sort_score(score_dict=textrank_score, num_sent=round(len_sent / 2) - 3)
 
+    # make article with coref
+    final_sent_coref = make_sentence_coref(sent_list=select_sent_coref_list, sorted_score_dict=sort_sent,
+                                           first3_sent=first3_sent)
+    print("final_sent_coref: ", final_sent_coref)
+
+    # shift sorted list by adding 3 from the beginning (coz we spare 3 sentences to be added already)
     sort_sent = [i + 3 for i in sort_sent]
+
+    # add first 3 sent and re-sort
     sort_sent.append(0)
     sort_sent.append(1)
     sort_sent.append(2)
     sort_sent.sort()
 
+    # combine sent into final string
     final_sent = make_sentence(sent_list=sent_list, sorted_score_dict=sort_sent)
 
-    return final_sent
+    return final_sent, final_sent_coref
 
 # tf = find_tfidf(content)
 
