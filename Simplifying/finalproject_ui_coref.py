@@ -1,11 +1,13 @@
+
 import streamlit as st
 import Generate_summary_NLP as simplifier
 from transformers import PegasusForConditionalGeneration, PegasusTokenizer
 import torch
-import sys
 
+import sys
 sys.path.insert(0, '..')
 from coreference_resolution.generate_summary import generate_coreference_summary as coref
+
 
 if 'model_loaded' not in st.session_state:
     st.session_state.model_loaded = ["loaded"]
@@ -15,6 +17,8 @@ if 'model_loaded' not in st.session_state:
     print("Downloading model")
     st.session_state.model = PegasusForConditionalGeneration.from_pretrained(model_name).to(st.session_state.device)
     st.session_state.tokenizer = PegasusTokenizer.from_pretrained(model_name)
+
+    st.session_state.rougescore = 0
 
 st.header("NLP Final Project")
 
@@ -90,3 +94,10 @@ with st.container():
 
     st.text_area('Simplified Text', simplified_summary, height=100)
     st.text("Text length: " + str(len(simplified_summary)))
+
+# if post_sum != '':
+#     st.session_state.rougescore = eval_rouge.cal_rouge([input_text], [post_sum])
+#
+#     st.text("Rouge 1 score is: " + str(st.session_state.rougescore['rouge1']))
+#     st.text("Rouge 2 score is: " + str(st.session_state.rougescore['rouge2']))
+#     st.text("Rouge L score is: " + str(st.session_state.rougescore['rougeL']))
