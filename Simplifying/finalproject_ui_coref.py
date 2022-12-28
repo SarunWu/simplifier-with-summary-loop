@@ -37,8 +37,10 @@ with st.container():
     input_text = st.text_area('Introduce your text to summarize!', value="", height=100)
     st.text("Text length: " + str(len(input_text)))
 
+st.markdown("""---""")
+
 # 2 - Generate co-references
-extractive_summarize_button = st.button("Generate extractive summary")
+# extractive_summarize_button = st.button("Generate extractive summary")
 used_pronoun = st.checkbox("Replace pronoun")
 
 with st.container():
@@ -48,14 +50,16 @@ with st.container():
         extracted_summary = original_summary
         if used_pronoun:
             extracted_summary = coref_summary
-    st.text_area('Co-referenced Text', extracted_summary, height=150)
+    st.text_area('Extractive Summary', extracted_summary, height=150)
     st.text("Text length: " + str(len(extracted_summary)))
 
 # 3 - Generate Summary
-summarize_button = st.button("Generate abstractive summary")
+# summarize_button = st.button("Generate abstractive summary")
+
+st.markdown("""---""")
 
 with st.container():
-    used_coref = st.checkbox("Use co-reference summary")
+    used_coref = st.checkbox("Use extractive summary as input")
     if ~used_coref:
         extracted_summary = input_text
 
@@ -75,9 +79,11 @@ with st.container():
     st.text_area('Summary Text', post_sum, height=150)
     st.text("Text length: " + str(len(post_sum)))
 
+st.markdown("""---""")
+
 # 4 - Simplified Text
 
-simplify_button = st.button("Simplify the summary")
+# simplify_button = st.button("Simplify the summary")
 
 with st.container():
     simplified_summary = simplifier.printsim(simplifier.simplify(post_sum))

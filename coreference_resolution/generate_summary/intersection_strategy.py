@@ -30,7 +30,8 @@ from allennlp.predictors.predictor import Predictor
         raise NotImplementedError"""
 
 model_url = 'https://storage.googleapis.com/allennlp-public-models/coref-spanbert-large-2021.03.10.tar.gz'
-predictor = Predictor.from_path(model_url)
+predictor = Predictor.from_path(archive_path='/Users/alejandrocortes/Documents/Taiwan Classes/Third Semester/NLP/\
+Summarization and Simplicity/coref_span/coref-spanbert-large-2020.02.27')
 
 # prediction = predictor.predict(document=text)
 

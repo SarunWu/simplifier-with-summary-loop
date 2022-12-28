@@ -14,7 +14,9 @@ from allennlp.predictors.predictor import Predictor
         raise NotImplementedError"""
 
 model_url = 'https://storage.googleapis.com/allennlp-public-models/coref-spanbert-large-2020.02.27.tar.gz' #coref-spanbert-large-2020.02.27 #2021.03.10
-predictor = Predictor.from_path(archive_path='/Users/kneskung/Code/coref_span/coref-spanbert-large-2020.02.27')
+# predictor = Predictor.from_path(archive_path='/Users/kneskung/Code/coref_span/coref-spanbert-large-2020.02.27')
+predictor = Predictor.from_path(archive_path='/Users/alejandrocortes/Documents/Taiwan Classes/Third Semester/NLP/\
+Summarization and Simplicity/coref_span/coref-spanbert-large-2020.02.27')
 
 # predictor = Predictor.from_path("/Users/kneskung/Code/coref_span/coref-spanbert-large-2021.03.10.tar.gz", "sentence_tagger", overrides={"dataset_reader.tokenizer.language": "en"})
 
