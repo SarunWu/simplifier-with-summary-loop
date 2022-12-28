@@ -61,6 +61,8 @@ def findsynset(diffword, wordpos):
             easyword3.append(i)
         if not dc.dcis_difficult_word(i):
             easyword1.append(i)
+    
+    print("Allword set is: ", allword)
 
     # select word to return
     if len(easyword1) > 0:
