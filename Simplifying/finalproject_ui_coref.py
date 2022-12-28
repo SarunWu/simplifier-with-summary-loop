@@ -47,6 +47,9 @@ st.markdown("""---""")
 # extractive_summarize_button = st.button("Generate extractive summary")
 used_pronoun = st.checkbox("Replace pronoun")
 
+original_summary = ""
+coref_summary = ""
+
 with st.container():
     extracted_summary = ""
     if input_text != "":
@@ -88,16 +91,14 @@ st.markdown("""---""")
 # 4 - Simplified Text
 
 # simplify_button = st.button("Simplify the summary")
-
 with st.container():
-    simplified_summary = simplifier.printsim(simplifier.simplify(post_sum))
+    simplified_coref = st.checkbox("Simplify extractive summary")
+    simplified_input = post_sum
+    if simplified_coref:
+        simplified_input = coref_summary
+
+    simplified_summary = simplifier.printsim(simplifier.simplify(simplified_input))
 
     st.text_area('Simplified Text', simplified_summary, height=100)
     st.text("Text length: " + str(len(simplified_summary)))
 
-# if post_sum != '':
-#     st.session_state.rougescore = eval_rouge.cal_rouge([input_text], [post_sum])
-#
-#     st.text("Rouge 1 score is: " + str(st.session_state.rougescore['rouge1']))
-#     st.text("Rouge 2 score is: " + str(st.session_state.rougescore['rouge2']))
-#     st.text("Rouge L score is: " + str(st.session_state.rougescore['rougeL']))
