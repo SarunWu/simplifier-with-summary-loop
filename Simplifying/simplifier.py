@@ -46,7 +46,7 @@ def findsynset(diffword, wordpos):
     else:
         return diffword
 
-    # extract all word in synset to a set of allword
+    # extract all word in synset to a set of all word
     if len(allsynset) > 0:
         for i in range(len(allsynset)):
             for j in range(len(allsynset[i].lemmas())):

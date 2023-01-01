@@ -7,8 +7,7 @@ import spacy
 import en_core_web_sm
 
 from abc import ABC, abstractmethod
-from os import environ
-from warnings import warn
+
 from typing import Dict, List
 from spacy.tokens import Doc
 from allennlp.predictors.predictor import Predictor

@@ -1,13 +1,12 @@
-
 import streamlit as st
-import Generate_summary_NLP as simplifier
+import simplifier
 from transformers import PegasusForConditionalGeneration, PegasusTokenizer
 import torch
 
 import sys
+
 sys.path.insert(0, '..')
 from coreference_resolution.generate_summary import generate_coreference_summary as coref
-
 
 if 'model_loaded' not in st.session_state:
     st.session_state.model_loaded = ["loaded"]
@@ -80,7 +79,7 @@ with st.container():
         post_sum = \
             st.session_state.tokenizer.batch_decode(summary_ids, skip_special_tokens=True,
                                                     clean_up_tokenization_spaces=True)[0]
-
+        post_sum = post_sum.replace("<n>", " ")
         difficult_words = simplifier.diffword(post_sum)
 
     st.text_area('Summary Text', post_sum, height=150)
@@ -101,4 +100,3 @@ with st.container():
 
     st.text_area('Simplified Text', simplified_summary, height=100)
     st.text("Text length: " + str(len(simplified_summary)))
-
